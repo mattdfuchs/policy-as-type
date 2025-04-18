@@ -1,0 +1,20 @@
+an attribute value is a datatype of some sort
+
+some are finite valued
+
+some (time of day) have unlimited values
+
+attributes are attributes of an entity
+
+entities include
+- the requesting agent
+- the executing system
+- a trusted source (which can sign things)
+- a service
+
+A trusted source TS has a list of methods for the attributes it supports
+- a call takes another entity as parameter and returns a dependent pair of attr value and Proof
+
+A service call is a tuple of values with in a dependent pair (does it need to be a triple?  Perhaps a response that's a also a dependent pair?)
+
+The dependent type of the service invocation is a predicate over attributes, where the attribute has a value and a proof of correctness.
