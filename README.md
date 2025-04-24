@@ -1,3 +1,4 @@
+
 # Policy as Type
 
 **Provably Correct Access Control Policies using Dependent Types**
@@ -9,18 +10,26 @@ we are exposed to reputational, legal, and financial risk in millisecond timefra
 your digital contract, or your AI hallucinates and transfers your money around.
 
 Organizations and even people need the most powerful available policy technologies, which means attribute based access control (ABAC). However, only the
-approach we demonstrate here can provide provable guarantees for the correctness of your policies.
+approach we demonstrate here can provide provable guarantees for the correctness of your policies and ensure they are correctly applied.
 
-Main Contributions
+Main Points
 ---
 
-Policies are types; a policy specifies which communications are well-typed (allowed) and which are not (refused)
+- Policies are types; a policy specifies which communications are well-formed (allowed) and which are not (refused)
 
-Dependently typed languages, such as **Agda** or **Lean** are sufficiently rich to express these even very complex policies as types
+- Dependently typed languages, such as **Agda** or **Lean**, are sufficiently rich to express even very complex policies as types
 
-As such, your code can be statically checked against these policies
-Security policies are actually types that can be statically type-checked in dependently typed languages.
+- As such, your code can be statically checked against these policies, ensuring they are correctly applied; existing systems cannot do so
+at the same level of complexity
 
-The dynamic and real-time nature of the online world, combined with the increasing reliance on AI, requires dynamic policies able to react to changes
-at internet speed; this requires the complexity and power of attribute based access control technologies.
+- The values our policies evaluate will soon be distributed over the network; policy technologies must handle that correctly
+
+- Security policies are actually types that can be statically type-checked in dependently typed languages.
+
+Structure
+---
+
+This repo contains a PDF of the paper _Policy as Code, Policy as Type_ in the paper subdirectory. The two main examples from the paper are in _examples_, with _rego_ containing code implementing the introductory example from the Rego documentation and _movies_ including the example from the other example worked out in depth in the paper. 
+
+
 
