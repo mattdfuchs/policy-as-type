@@ -26,10 +26,11 @@ at the same level of complexity
 
 - Security policies are actually types that can be statically type-checked in dependently typed languages.
 
-Structure
----
+## Structure
 
-This repo contains a PDF of the paper _Policy as Code, Policy as Type_ in the paper subdirectory. The two main examples from the paper are in _examples_, with _rego_ containing code implementing the introductory example from the Rego documentation and _movies_ including the example from the other example worked out in depth in the paper. 
-
-
-
+| Folder       | Purpose |
+|--------------|---------|
+| `agda/`      | Core modules implementing policy types and proofs |
+| `examples/`  | Examples and Rego comparisons |
+| `docs/`      | Overview materials and diagrams |
+| `paper/`     | PDF version of the full paper (optional) |
