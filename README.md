@@ -3,7 +3,7 @@
 
 **Provably Correct Access Control Policies using Dependent Types**
 
-This repository demonstrates how access control policies can be encoded as types in dependently typed languages, using **Agda**. It implements the concepts from the paper _Policy as Code, Policy as Type_ with examples comparing this approach to Rego (OPA) and, indirectly, Sentinel and Cedar.
+This repository demonstrates how access control policies can be encoded as types in dependently typed languages, using **Agda**. It implements the concepts from the paper [_Policy as Code, Policy as Type_](https://docs.google.com/document/d/1rqTnZo-35_aBzkleIJDjBYN7IzjbQ8X2mKas3zV4Bo8/edit?usp=sharing) with examples comparing this approach to Rego (OPA) and, indirectly, Sentinel and Cedar.
 
 Well-defined, provably-correct, and correctly applied policies are your best protection against criminal malice and incompetence. With life and commerce online, 
 we are exposed to reputational, legal, and financial risk in millisecond timeframes; there won't always be a human in the loop when a criminal exploits a hole in 
@@ -26,11 +26,14 @@ at the same level of complexity
 
 - Security policies are actually types that can be statically type-checked in dependently typed languages.
 
+## Running the Examples
+
+To check out the examples you need to install agda and the agda standard library. The examples have been built with agda-stdlib 2.0, so should work with any 2.x version.
+
+Instructions for installing Agda can be found [here](https://agda.readthedocs.io/en/stable/getting-started/installation.html).
 ## Structure
 
 | Folder       | Purpose |
 |--------------|---------|
-| `agda/`      | Core modules implementing policy types and proofs |
 | `examples/`  | Examples and Rego comparisons |
-| `docs/`      | Overview materials and diagrams |
-| `paper/`     | PDF version of the full paper (optional) |
+| `paper/`     | PDF version of the full paper |

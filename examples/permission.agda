@@ -101,166 +101,6 @@ telnet ≟P mysql = no λ()
 telnet ≟P memcache = no λ()
 telnet ≟P http = no λ()
 
-isEquivalenceProt : IsEquivalence {A = Protocol} _≡_
-isEquivalenceProt = record
-  { refl  = refl
-  ; sym   = sym
-  ; trans = trans
-  }
-
-isDecEquivalenceProt : IsDecEquivalence _≡_
-isDecEquivalenceProt = record
-  { isEquivalence = isEquivalenceProt
-  ; _≟_ = _≟P_
-  }
-
-protDecSetoid : DecSetoid 0ℓ  0ℓ
-protDecSetoid = record
-  { Carrier = Protocol
-  ; _≈_ = _≡_
-  ; isDecEquivalence = isDecEquivalenceProt
-  }
-
-protocolSetoid : Setoid 0ℓ  0ℓ
-protocolSetoid = record
-  { Carrier = Protocol
-    ; _≈_ = _≡_
-    ; isEquivalence = isEquivalenceProt
-  }
-
-open module ProtSetoid = Data.List.Membership.Setoid protocolSetoid
-open module ProtDecSetoid = Data.List.Membership.DecSetoid protDecSetoid
-
--- Define the infix operator for list intersection
-infixl 6 _∩_
-
-_∩_ : List Protocol → List Protocol → List Protocol
-xs ∩ ys = filter (λ x → x ProtDecSetoid.∈? ys) xs
-
--- Decidably prove that two lists have an empty intersection
-emptyIntersection : ∀ (xs ys : List Protocol) → Dec (xs ∩ ys ≡ [])
-emptyIntersection [] _ = yes refl
-emptyIntersection (x ∷ xs) ys with x ProtDecSetoid.∈? ys
-... | yes _ = no λ ()
-... | no _  = emptyIntersection xs ys
-
-data Network : Set where
-    network : String → Bool → Network
-
-data Port : Set where
-    port : String → Network → Port
-
-data Server : Set where
-    server : String → List Protocol → List Port → Server
-
-protocols : Server → List Protocol
-protocols (server _ a _) = a
-
-portList : Server → List Port
-portList (server _ _ po) = po
-
--- Recreation of the Rego example
-
-net1 = network "net1" Bool.false
-net2 = network "net2" Bool.false
-net3 = network "net3" Bool.true
-net4 = network "net4" Bool.true
-
-publicNetwork : Network → Bool
-publicNetwork (network _ a) = a
-
-getNetwork : Port → Network
-getNetwork (port _ n) = n
-
-p1 = port "p1" net1
-p2 = port "p2" net3
-p3 = port "p3" net2
-
-app = server "app" (https ∷ ssh ∷ []) (p1 ∷ p2 ∷ p3 ∷ [])
-db = server "db" (mysql ∷ []) (p3 ∷ [])
-cache = server "cache" (memcache ∷ []) (p3 ∷ [])
-ci = server "ci" (http ∷ []) (p1 ∷ p2 ∷ [])
-busybox = server "busybox" (telnet ∷ []) (p1 ∷ [])
-
-servers = app ∷ db ∷ cache ∷ ci ∷ busybox ∷ []
-networks = net1 ∷ net2 ∷ net3 ∷ net4 ∷ []
-ports = p1 ∷ p2 ∷ p3 ∷ []
-
-badProtocols : List Protocol
-badProtocols = (telnet ∷ [])
-
-strongProtocols : List Protocol
-strongProtocols = https ∷ ssh ∷ mysql ∷ memcache ∷ []
-
-weakProtocols : List Protocol
-weakProtocols = http ∷ []
-
-allProtosAssigned : (p : Protocol) → (p ProtDecSetoid.∈ badProtocols) ⊎ (p ProtDecSetoid.∈ weakProtocols) ⊎ (p ProtDecSetoid.∈ strongProtocols)
-allProtosAssigned https = (inj₂ (inj₂ (here refl)))
-allProtosAssigned ssh = (inj₂ (inj₂ (there (here refl))))
-allProtosAssigned mysql = (inj₂ (inj₂ (there (there (here refl)))))
-allProtosAssigned memcache = (inj₂ (inj₂ (there (there (there (here refl))))))
-allProtosAssigned http = (inj₂ (inj₁ (here refl)))
-allProtosAssigned telnet = (inj₁ (here refl))
-
-separate : (badProtocols ∩ weakProtocols ≡ []) × (badProtocols ∩ strongProtocols ≡ []) 
-           × (weakProtocols ∩ strongProtocols ≡ [])
-separate = refl , refl , refl
-
-data GoodProtos : Server → Set where
-  *good* : (p : Server) → ((protocols p) ∩ badProtocols) ≡ [] → GoodProtos p
-
-anyExposed : List Port → List Port
-anyExposed somePorts = filterᵇ (λ {(port _ (network _ exp)) → exp}) somePorts
-
-data PrivateServer : Server → Set where
-  *private* : (s : Server) → (Data.List.Base.length (anyExposed (portList s))) ≡ 0 → PrivateServer s
-
-negatePrivateServer : ∀ (s : Server) → { Data.List.Base.length (anyExposed (portList s)) ≢ 0 } → ¬ (PrivateServer s)
-negatePrivateServer s { neq } (*private* _ p) = ⊥-elim (neq p)
-
-negatePrivateServer : ∀ (s : Server) → { Data.List.Base.length (anyExposed (portList s)) ≡ 0 → ⊥} → ((PrivateServer s) → ⊥)
-
-
-isPrivate : (s : Server) → Dec (PrivateServer s)
-isPrivate s with (Data.List.Base.length (anyExposed (portList s))) ≟ 0
-...          | yes eq = yes (*private* s eq)
-...          | no neq = no (negatePrivateServer s { neq })   -- (nps neq)
-
-data GoodServer : (s : Server) → Set where
-  *goodserver* : ∀ (s : Server) → (GoodProtos s) → (PrivateServer s) → (GoodServer s)
-  *safeserver* : ∀ (s : Server) → (GoodProtos s) → ¬ (PrivateServer s) → ((protocols s) ∩ weakProtocols ≡ []) → (GoodServer s)
-
-goodServerCheck : (s : Server) → Maybe (Σ[ s ∈ (Server) ] (GoodServer s))
-goodServerCheck s@(server _ protList portList) with (emptyIntersection protList badProtocols)
-...           | no _ = nothing
-...           | yes ei1 with isPrivate s
-...                       | yes eqz = just (s , *goodserver* s (*good* s ei1) eqz)
-...                       | no  gtz with (emptyIntersection protList weakProtocols)
-...                                       | no _ = nothing
-...                                       | yes ie2 = just (s , *safeserver* s (*good* s ei1) gtz ie2)
-
-goof = goodServerCheck db
-poof = goodServerCheck ci
-
-boom : Σ[ s ∈ (Server) ] (GoodServer s)
-boom = let foo = server "foo" (mysql ∷ []) (p3 ∷ []) in (foo , *goodserver* foo (*good* foo refl) (*private* foo refl))
-bam = proj₁ boom
-bust : Σ[ s ∈ (Server) ] (GoodServer s)
-bust = (app , *safeserver* app (*good* app refl) (negatePrivateServer app { λ() }) refl)
-pizl = proj₁ bust
-
-goodServerList : List Server → List Server
-goodServerList [] = []
-goodServerList (h ∷ t) with goodServerCheck h
-...                      | nothing = goodServerList t
-...                      | just _  = h ∷ (goodServerList t)
-
-badServerList : List Server → List Server
-badServerList [] = []
-badServerList (h ∷ t) with goodServerCheck h
-...                      | just _ = badServerList t
-...                      | nothing = h ∷ (badServerList t)
 
 {--
 
@@ -421,6 +261,7 @@ safeCall : Σ[ c ∈ Context ] (SafeContext c) →
 safeCall context sender channel payload service = answer
  where 
     doCall : Transport → ItemRequest → Service → Maybe Item
+    -- we don't really call anything here, just demo, so we return a fixed object
     doCall a b c = just response
     answer : Maybe Item
     answer with doCall (proj₁ channel) (proj₁ payload) (proj₁ service) 
@@ -468,7 +309,7 @@ isParently a b with a ≟U b
 ...             | no _ = Bool.false
 ...             | yes _ = Bool.true
 
-sender = record { name = "Sender" ; age = 10 ; parent = just daddy ; 
+sender = record { name = "Sender" ; age = 13 ; parent = just daddy ; 
                   grantsPermission = λ { u i → Bool.false } 
                   ; isParent = λ { pq → isParently pq daddy }
   }
@@ -490,78 +331,16 @@ service = record { name = "Foo" ; isApproved = Bool.true }
 service2 : Service
 service2 = record { name = "Foo" ; isApproved = Bool.false }
 
+{--
+
+    The following are the calls to the preCall function to validate whether a sender is
+    authorized to call a service. In this case the service is a video, which might require the
+    sender to be over a certain age, or have permission from a parent.   
+    If it returns just item, then the call was safe and this is the response. If it returns nothing, 
+    then the call was not safe, and so nothing is returned.
+
+--}
+
 tryOne = preCall context sender channel payload service
 tryTwo = preCall context youngSender channel payload service
 tryThree = preCall context daddy channel payload service
-
-record ClaimServer : Set
-
-data AgeClaim : ClaimServer → User → Set where
-  ageClaim : (a : ClaimServer) → (e : User) → (n : ℕ) → AgeClaim a e
-
-data ParentClaim : ClaimServer → User → User → Set where
-  parentClaim : {parent : User} → (a : ClaimServer) → (child : User) → ParentClaim a child parent
-
-data PermissionClaim : ClaimServer → User → User → Bool → Set where
-  permissionClaim : (a : ClaimServer) → (parent : User) → (child : User) → (perm? : Bool) → PermissionClaim a child parent perm?
-
-data AgeLimitClaim : ClaimServer → ItemRequest → ℕ → Set where
-  ageLimitClaim : (a : ClaimServer) → (i : ItemRequest) → (al : ℕ) → AgeLimitClaim a i al
-
-{-# NO_POSITIVITY_CHECK #-}
-record ClaimServer where
-  inductive
-  field
-    name : String
-    getAge : {a : ClaimServer} → (u : User) → Maybe (Pair String (AgeClaim a u))
-
-
-getAgeAttribute : (a : ClaimServer) → (u : User) → Maybe (Pair String (AgeClaim a u))
-getAgeAttribute a u = (ClaimServer.getAge a u)
-
-attributor : ClaimServer
-attributor = record { name = "https://attributor.org/api/claims" ; 
-    getAge = \ where
-       { foo } sender → just ((ClaimServer.name foo) , ageClaim foo sender 10)
-  }
-
-getAge : {a : ClaimServer} → {u : User} → AgeClaim a u → ℕ
-getAge (ageClaim _ _ c) = c
-
-data ITrustYou : (s : Service) → (a : ClaimServer) → Set where
-  iTrustYou : (s : Service) → (a : ClaimServer) → ITrustYou s a
-
-data BelieveUnder12 : User → Set where
-  *believe* : (u : User) → (a : ClaimServer) → (s : Service) → ITrustYou s a → (ac : AgeClaim a u) → (getAge ac) Data.Nat.Base.≤ 50 → BelieveUnder12 u
-
-record Transaction : Set where
-  field
-    callContext : Context
-    callSender : User
-    callTransport : Transport
-    requestedItem : ItemRequest
-    recipient : Service
-    safeContext : SafeContext callContext
-    safeSender : SafeSender callSender
-    safeChannel : SafeChannel callTransport
-    safePayload : SafePayload requestedItem
-    safeService : SafeService recipient
-  data FooBar : Set where
-    bing : FooBar
-    bong : FooBar
-
-
-naive : ITrustYou service attributor
-naive = iTrustYou service attributor
-
-kid : Maybe (Pair String (BelieveUnder12 sender))
-kid with getAgeAttribute attributor sender
-...   | nothing = nothing
-...   | just fff = tooYoung
-          where 
-            ageism = getAge (Pair.snd fff)
-            tooYoung : Maybe (Pair String (BelieveUnder12 sender))
-            tooYoung with (ageism Data.Nat.Properties.≤? 50)
-            ...       | no _ = nothing
-            ...       | yes p = just ((Pair.fst fff) , (*believe* sender attributor service naive (Pair.snd fff) p))
-

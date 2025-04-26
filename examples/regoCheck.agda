@@ -1,5 +1,3 @@
-module RegoBase where
-
 open import Data.Nat.Base using (ℕ; zero; suc; _+_; _*_; _∸_;_^_; _≤_; _>_ ; z≤n; s≤s; _≡ᵇ_)
 open import Data.Nat.Properties using (_≟_ ; _<?_; ≡-decSetoid)
 open import Data.List.Base
@@ -12,6 +10,7 @@ open import Data.Product.Base
 open import Data.Maybe.Base
 open import Data.Maybe.Properties
 open import Data.String.Base
+open import Data.Sum using (_⊎_; inj₁; inj₂)
 open import Data.String.Properties renaming (_≟_ to _≟S_; _<?_ to _<S?_)
 open import Relation.Nullary.Decidable.Core 
 open import Relation.Nullary.Reflects
@@ -26,6 +25,7 @@ open import Level.Literals
 
 open import Data.List.Membership.DecSetoid using ( _∈?_ )
 open import Data.List.Membership.Setoid using (_∈_)
+open import Data.List.Relation.Unary.Any using (Any ; here ; there)
 open import Data.Unit.Polymorphic.Base
 open import Relation.Unary using (Pred)
 
@@ -50,17 +50,6 @@ protoToNat mysql = 2
 protoToNat memcache = 3
 protoToNat http = 4
 protoToNat telnet = 5
-
-data _≡P2_ : Rel Protocol (# 0) where
-  *≡P2* : ∀ { p q : Protocol} → (protoToNat p) ≡ (protoToNat q) → p ≡P2 q
-
-_≟P2_ : (a : Protocol) → (b : Protocol) → Dec ( a ≡P2 b)
-a ≟P2 b with (protoToNat a) Data.Nat.Properties.≟ (protoToNat b)
-...       | yes y = yes (*≡P2* y)
-...       | no  n = no (nent n)
-  where
-    nent : ∀ {s t : Protocol} → (protoToNat s) ≢ (protoToNat t) → ¬ (s ≡P2 t)
-    nent neq (*≡P2* ff) = ⊥-elim (neq ff)
 
 -- could map to string or Fin compares
 _≟P_ : (p q : Protocol) → Dec (p ≡ q)
@@ -121,16 +110,26 @@ protDecSetoid = record
   ; isDecEquivalence = isDecEquivalenceProt
   }
 
+protocolSetoid : Setoid 0ℓ  0ℓ
+protocolSetoid = record
+  { Carrier = Protocol
+    ; _≈_ = _≡_
+    ; isEquivalence = isEquivalenceProt
+  }
+
+open module ProtSetoid = Data.List.Membership.Setoid protocolSetoid
+open module ProtDecSetoid = Data.List.Membership.DecSetoid protDecSetoid
+
 -- Define the infix operator for list intersection
 infixl 6 _∩_
 
 _∩_ : List Protocol → List Protocol → List Protocol
-xs ∩ ys = filter (λ x → _∈?_ protDecSetoid x ys) xs
+xs ∩ ys = filter (λ x → x ProtDecSetoid.∈? ys) xs
 
 -- Decidably prove that two lists have an empty intersection
 emptyIntersection : ∀ (xs ys : List Protocol) → Dec (xs ∩ ys ≡ [])
 emptyIntersection [] _ = yes refl
-emptyIntersection (x ∷ xs) ys with _∈?_ protDecSetoid x ys
+emptyIntersection (x ∷ xs) ys with x ProtDecSetoid.∈? ys
 ... | yes _ = no λ ()
 ... | no _  = emptyIntersection xs ys
 
@@ -149,18 +148,85 @@ protocols (server _ a _) = a
 portList : Server → List Port
 portList (server _ _ po) = po
 
--- Recreation of the Rego example
-
-net1 = network "net1" Bool.false
-net2 = network "net2" Bool.false
-net3 = network "net3" Bool.true
-net4 = network "net4" Bool.true
-
 publicNetwork : Network → Bool
 publicNetwork (network _ a) = a
 
 getNetwork : Port → Network
 getNetwork (port _ n) = n
+
+
+badProtocols : List Protocol
+badProtocols = (telnet ∷ [])
+
+strongProtocols : List Protocol
+strongProtocols = https ∷ ssh ∷ mysql ∷ memcache ∷ []
+
+weakProtocols : List Protocol
+weakProtocols = http ∷ []
+
+allProtosAssigned : (p : Protocol) → (p ProtDecSetoid.∈ badProtocols) ⊎ (p ProtDecSetoid.∈ weakProtocols) ⊎ (p ProtDecSetoid.∈ strongProtocols)
+allProtosAssigned https = (inj₂ (inj₂ (here refl)))
+allProtosAssigned ssh = (inj₂ (inj₂ (there (here refl))))
+allProtosAssigned mysql = (inj₂ (inj₂ (there (there (here refl)))))
+allProtosAssigned memcache = (inj₂ (inj₂ (there (there (there (here refl))))))
+allProtosAssigned http = (inj₂ (inj₁ (here refl)))
+allProtosAssigned telnet = (inj₁ (here refl))
+
+separate : (badProtocols ∩ weakProtocols ≡ []) × (badProtocols ∩ strongProtocols ≡ []) 
+           × (weakProtocols ∩ strongProtocols ≡ [])
+separate = refl , refl , refl
+
+data GoodProtos : Server → Set where
+  *good* : (p : Server) → ((protocols p) ∩ badProtocols) ≡ [] → GoodProtos p
+
+anyExposed : List Port → List Port
+anyExposed somePorts = filterᵇ (λ {(port _ (network _ exp)) → exp}) somePorts
+
+data PrivateServer : Server → Set where
+  *private* : (s : Server) → (Data.List.Base.length (anyExposed (portList s))) ≡ 0 → PrivateServer s
+
+negatePrivateServer : ∀ (s : Server) → { Data.List.Base.length (anyExposed (portList s)) ≢ 0 } → ¬ (PrivateServer s)
+negatePrivateServer s { neq } (*private* _ p) = ⊥-elim (neq p)
+
+-- negatePrivateServer : ∀ (s : Server) → { Data.List.Base.length (anyExposed (portList s)) ≡ 0 → ⊥} → ((PrivateServer s) → ⊥)
+
+
+isPrivate : (s : Server) → Dec (PrivateServer s)
+isPrivate s with (Data.List.Base.length (anyExposed (portList s))) ≟ 0
+...          | yes eq = yes (*private* s eq)
+...          | no neq = no (negatePrivateServer s { neq })   -- (nps neq)
+
+data GoodServer : (s : Server) → Set where
+  *goodserver* : ∀ (s : Server) → (GoodProtos s) → (PrivateServer s) → (GoodServer s)
+  *safeserver* : ∀ (s : Server) → (GoodProtos s) → ¬ (PrivateServer s) → ((protocols s) ∩ weakProtocols ≡ []) → (GoodServer s)
+
+goodServerCheck : (s : Server) → Maybe (Σ[ s ∈ (Server) ] (GoodServer s))
+goodServerCheck s@(server _ protList portList) with (emptyIntersection protList badProtocols)
+...           | no _ = nothing
+...           | yes ei1 with isPrivate s
+...                       | yes eqz = just (s , *goodserver* s (*good* s ei1) eqz)
+...                       | no  gtz with (emptyIntersection protList weakProtocols)
+...                                       | no _ = nothing
+...                                       | yes ie2 = just (s , *safeserver* s (*good* s ei1) gtz ie2)
+
+goodServerList : List Server → List Server
+goodServerList [] = []
+goodServerList (h ∷ t) with goodServerCheck h
+...                      | nothing = goodServerList t
+...                      | just _  = h ∷ (goodServerList t)
+
+badServerList : List Server → List Server
+badServerList [] = []
+badServerList (h ∷ t) with goodServerCheck h
+...                      | just _ = badServerList t
+...                      | nothing = h ∷ (badServerList t)
+
+-- Recreation of the Rego example: gives the same network as the doc
+
+net1 = network "net1" Bool.false
+net2 = network "net2" Bool.false
+net3 = network "net3" Bool.true
+net4 = network "net4" Bool.true
 
 p1 = port "p1" net1
 p2 = port "p2" net3
@@ -176,66 +242,27 @@ servers = app ∷ db ∷ cache ∷ ci ∷ busybox ∷ []
 networks = net1 ∷ net2 ∷ net3 ∷ net4 ∷ []
 ports = p1 ∷ p2 ∷ p3 ∷ []
 
-badProtocols : List Protocol
-badProtocols = (telnet ∷ [])
+veryGood : Σ[ s ∈ (Server) ] (GoodServer s)
+veryGood = let foo = server "foo" (mysql ∷ []) (p3 ∷ []) in (foo , *goodserver* foo (*good* foo refl) (*private* foo refl))
+theServer = proj₁ veryGood
+theProof  = proj₂ veryGood
 
-strongProtocols : List Protocol
-strongProtocols = https ∷ ssh ∷ mysql ∷ memcache ∷ []
+{- 
 
-weakProtocols : List Protocol
-weakProtocols = http ∷ []
+You can now do some checks on the servers:
+- try goodServerCheck on some server, such as 
+    goodServerCheck db
+  and then get the normal forms c^c c^n, using emacs mode in visual studio
 
-data GoodProtos : Server → Set where
-  *good* : (p : Server) → ((protocols p) ∩ badProtocols) ≡ [] → GoodProtos p
+  also try 
+    goodServerList servers
+  
+  if is is well formed, you will get back the server definition (in its internal representation), but otherwise nothing
+  Try changing the definition and see what you get.
 
-anyExposed : List Port → List Port
-anyExposed somePorts = filterᵇ (λ {(port _ (network _ exp)) → exp}) somePorts
+  veryGood, above, is a dependent pair. It is a pair of a server and a proof it is good. You can get either the server definition
+  itself by projecting the first part, or the proof by projecting the second.
 
-data PrivateServer : Server → Set where
-  *private* : (s : Server) → (Data.List.Base.length (anyExposed (portList s))) ≡ 0 → PrivateServer s
+-}
 
-negatePrivateServer : ∀ (s : Server) → { Data.List.Base.length (anyExposed (portList s)) ≢ 0 } → ¬ (PrivateServer s)
-negatePrivateServer s { neq } (*private* _ p) = ⊥-elim (neq p)
 
-isPrivate : (s : Server) → Dec (PrivateServer s)
-isPrivate s with (Data.List.Base.length (anyExposed (portList s))) ≟ 0
-...          | yes eq = yes (*private* s eq)
-...          | no neq = no (nps neq)
-   where
-      nps : ∀ {s : Server} → Data.List.Base.length (anyExposed (portList s)) ≢ 0 → ¬ (PrivateServer s)
-      nps neq (*private* _ p) = ⊥-elim (neq p)
-
-data GoodServer : (s : Server) → Set where
-  *goodserver* : ∀ (s : Server) → (GoodProtos s) → (PrivateServer s) → (GoodServer s)
-  *safeserver* : ∀ (s : Server) → (GoodProtos s) → ¬ (PrivateServer s) → ((protocols s) ∩ weakProtocols ≡ []) → (GoodServer s)
-
-goodServerCheck : (s : Server) → Maybe (Σ[ s ∈ (Server) ] (GoodServer s))
-goodServerCheck s@(server _ protList portList) with (emptyIntersection protList badProtocols)
-...           | no _ = nothing
-...           | yes ei1 with isPrivate s
-...                       | yes eqz = just (s , *goodserver* s (*good* s ei1) eqz)
-...                       | no  gtz with (emptyIntersection protList weakProtocols)
-...                                       | no _ = nothing
-...                                       | yes ie2 = just (s , *safeserver* s (*good* s ei1) gtz ie2)
-
-goof = goodServerCheck db
-poof = goodServerCheck ci
-
-boom : Σ[ s ∈ (Server) ] (GoodServer s)
-boom = let foo = server "foo" (mysql ∷ []) (p3 ∷ []) in (foo , *goodserver* foo (*good* foo refl) (*private* foo refl))
-bam = proj₁ boom
-bust : Σ[ s ∈ (Server) ] (GoodServer s)
-bust = (app , *safeserver* app (*good* app refl) (negatePrivateServer app { λ() }) refl)
-pizl = proj₁ bust
-
-goodServerList : List Server → List Server
-goodServerList [] = []
-goodServerList (h ∷ t) with goodServerCheck h
-...                      | nothing = goodServerList t
-...                      | just _  = h ∷ (goodServerList t)
-
-badServerList : List Server → List Server
-badServerList [] = []
-badServerList (h ∷ t) with goodServerCheck h
-...                      | just _ = badServerList t
-...                      | nothing = h ∷ (badServerList t)
