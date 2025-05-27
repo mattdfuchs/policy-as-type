@@ -20,6 +20,7 @@ author:
 title: |
   Policy as Code, Policy as Type  
   Access Control through Dependent Typing
+rights: "© 2025 Matthew Fuchs"
 ---
 
 # Introduction
@@ -1592,8 +1593,6 @@ among the entities involved in some transaction, such as a digital
 contract. We show how Agda language constructs, such as modules and
 record types, can serve to specify these, as well as share proofs and
 back and forth.
-
-2025 Matthew Fuchs. All rights reserved.
 
 [^2]: <https://research.google/pubs/zanzibar-googles-consistent-global-authorization-system/>
 
