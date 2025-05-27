@@ -36,4 +36,4 @@ Instructions for installing Agda can be found [here](https://agda.readthedocs.io
 | Folder       | Purpose |
 |--------------|---------|
 | `examples/`  | Examples and Rego comparisons |
-| `paper/`     | PDF version of the full paper |
+| `paper/`     | PDF and MD versions of the full paper |
