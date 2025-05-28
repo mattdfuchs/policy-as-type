@@ -37,3 +37,7 @@ Instructions for installing Agda can be found [here](https://agda.readthedocs.io
 |--------------|---------|
 | `examples/`  | Examples and Rego comparisons |
 | `paper/`     | PDF and MD versions of the full paper |
+
+## Acknowledgements
+
+I would like to thank [Allen Brown, Jr.](https://www.linkedin.com/in/allen-brown-36b1261/), for many discussion and his careful reading which has significantly improved this paper.
