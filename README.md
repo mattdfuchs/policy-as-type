@@ -3,7 +3,7 @@
 
 **Provably Correct Access Control Policies using Dependent Types**
 
-This repository demonstrates how access control policies can be encoded as types in dependently typed languages, using **Agda**. It implements the concepts from the paper [_Policy as Code, Policy as Type_](https://docs.google.com/document/d/1rqTnZo-35_aBzkleIJDjBYN7IzjbQ8X2mKas3zV4Bo8/edit?usp=sharing) with examples comparing this approach to Rego (OPA) and, indirectly, Sentinel and Cedar.
+This repository demonstrates how access control policies can be encoded as types in dependently typed languages, using **Agda**. It implements the concepts from the paper [_Policy as Code, Policy as Type_](https://github.com/mattdfuchs/policy-as-type/blob/main/paper/PolicyAsType.pdf) with examples comparing this approach to Rego (OPA) and, indirectly, Sentinel and Cedar.
 
 Well-defined, provably-correct, and correctly applied policies are your best protection against criminal malice and incompetence. With life and commerce online, 
 we are exposed to reputational, legal, and financial risk in millisecond timeframes; there won't always be a human in the loop when a criminal exploits a hole in 
