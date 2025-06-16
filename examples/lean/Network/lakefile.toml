@@ -1,0 +1,13 @@
+name = "Network"
+version = "0.1.0"
+defaultTargets = ["network"]
+
+[[lean_lib]]
+name = "Network"
+
+[dependencies]
+std =  "4.21.0-rc3"
+
+[[lean_exe]]
+name = "network"
+root = "Main"
