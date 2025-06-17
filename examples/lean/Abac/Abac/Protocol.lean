@@ -1,3 +1,6 @@
+-- SPDX-License-Identifier: MIT
+-- Copyright © 2025 Matthew Fuchs
+
 inductive Protocol
 | https | ssh | mysql | memcache | http | telnet
 deriving DecidableEq

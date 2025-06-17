@@ -1,3 +1,6 @@
+-- SPDX-License-Identifier: MIT
+-- Copyright © 2025 Matthew Fuchs
+
 import Abac.Protocol
 import Abac.Model
 

@@ -1,3 +1,6 @@
+-- SPDX-License-Identifier: MIT
+-- Copyright © 2025 Matthew Fuchs
+
 import Network.Protocol
 import Network.Types
 import Network.Checks

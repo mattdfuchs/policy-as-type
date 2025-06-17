@@ -1,3 +1,6 @@
+-- SPDX-License-Identifier: MIT
+-- Copyright © 2025 Matthew Fuchs
+
 open import Data.Nat.Base using (ℕ; zero; suc; _+_; _*_; _∸_;_^_; _≤_; _>_ ; z≤n; s≤s; _≡ᵇ_)
 open import Data.Nat.Properties using (_≟_ ; _<?_; ≡-decSetoid)
 open import Data.List.Base

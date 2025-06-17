@@ -49,3 +49,7 @@ For the Lean examples, you'll need to install lean. Instructions are [here](http
 ## Acknowledgements
 
 I would like to thank [Allen Brown, Jr.](https://www.linkedin.com/in/allen-brown-36b1261/), for many discussions and his careful reading which has significantly improved this paper.
+
+### License
+Code – MIT (see LICENSE)
+Docs/Figures – CC-BY-4.0

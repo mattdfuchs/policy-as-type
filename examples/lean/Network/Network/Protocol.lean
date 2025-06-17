@@ -1,3 +1,5 @@
+-- SPDX-License-Identifier: MIT
+-- Copyright © 2025 Matthew Fuchs
 namespace Network
 
 inductive Protocol where

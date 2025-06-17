@@ -1,3 +1,6 @@
+-- SPDX-License-Identifier: MIT
+-- Copyright © 2025 Matthew Fuchs
+
 import Std
 import Init.Data.Nat.Basic
 
