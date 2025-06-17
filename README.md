@@ -3,7 +3,9 @@
 
 **Provably Correct Access Control Policies using Dependent Types**
 
-This repository demonstrates how access control policies can be encoded as types in dependently typed languages, using **Agda**. It implements the concepts from the paper [_Policy as Code, Policy as Type_](https://github.com/mattdfuchs/policy-as-type/blob/main/paper/PolicyAsType.pdf) with examples comparing this approach to Rego (OPA) and, indirectly, Sentinel and Cedar.
+This repository demonstrates how access control policies can be encoded as types in dependently typed languages, using **Agda** (or **Lean**). It implements the concepts
+from the paper [_Policy as Code, Policy as Type_](https://github.com/mattdfuchs/policy-as-type/blob/main/paper/PolicyAsType.pdf) with examples comparing this approach to
+Rego (OPA) and, indirectly, Sentinel and Cedar.
 
 Well-defined, provably-correct, and correctly applied policies are your best protection against criminal malice and incompetence. With life and commerce online, 
 we are exposed to reputational, legal, and financial risk in millisecond timeframes; there won't always be a human in the loop when a criminal exploits a hole in 
@@ -28,14 +30,20 @@ at the same level of complexity
 
 ## Running the Examples
 
-To check out the examples you need to install agda and the agda standard library. The examples have been built with agda-stdlib 2.0, so should work with any 2.x version.
+While the paper shows code in Agda, I've also translated the examples to Lean as well.
+
+To check out the agda examples you need to install agda and the agda standard library. The examples have been built with agda-stdlib 2.0, so should work with any 2.x version.
 
 Instructions for installing Agda can be found [here](https://agda.readthedocs.io/en/stable/getting-started/installation.html).
+
+For the Lean examples, you'll need to install lean. Instructions are [here](https://lean-lang.org/documentation/setup/). They assume you'll be developing with VS Code.
+
 ## Structure
 
 | Folder       | Purpose |
 |--------------|---------|
-| `examples/`  | Examples and Rego comparisons |
+| `examples/agda`  | Agda version of the examples |
+| `examples/lean` | Lean version fo the examples |
 | `paper/`     | PDF and MD versions of the full paper |
 
 ## Acknowledgements
