@@ -5,7 +5,7 @@
 
 This repository demonstrates how access control policies can be encoded as types in dependently typed languages, using **Agda** (or **Lean**). It implements the concepts
 from the paper [_Policy as Code, Policy as Type_](https://arxiv.org/abs/2506.01446) with examples comparing this approach to
-Rego (OPA) and, indirectly, Sentinel and Cedar.
+Rego (OPA) and, indirectly, Sentinel and Cedar. (Skip the intro if you already know ABAC and want to go straight to the code.)
 
 Well-defined, provably-correct, and correctly applied policies are your best protection against criminal malice and incompetence. With life and commerce online, 
 we are exposed to reputational, legal, and financial risk in millisecond timeframes; there won't always be a human in the loop when a criminal exploits a hole in 
